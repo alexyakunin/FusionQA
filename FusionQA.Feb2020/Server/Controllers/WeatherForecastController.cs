@@ -1,33 +1,19 @@
+﻿using FusionQA.Feb2020.Shared;
 using Microsoft.AspNetCore.Mvc;
-using FusionQA.Feb2020.Shared;
+using Stl.Fusion.Server;
 
 namespace FusionQA.Feb2020.Server.Controllers;
 
-[ApiController]
-[Route("[controller]")]
-public class WeatherForecastController : ControllerBase
+[Route("api/[controller]/[action]")]
+[ApiController, JsonifyErrors]
+public class WeatherForecastController : ControllerBase, IWeatherForecastService
 {
-    private static readonly string[] Summaries = new[]
-    {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
+    private readonly IWeatherForecastService _forecast;
 
-    private readonly ILogger<WeatherForecastController> _logger;
+    public WeatherForecastController(IWeatherForecastService forecast) => _forecast = forecast;
 
-    public WeatherForecastController(ILogger<WeatherForecastController> logger)
-    {
-        _logger = logger;
-    }
-
-    [HttpGet]
-    public IEnumerable<WeatherForecast> Get()
-    {
-        return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-        {
-            Date = DateTime.Now.AddDays(index),
-            TemperatureC = Random.Shared.Next(-20, 55),
-            Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-        })
-        .ToArray();
-    }
+    [HttpGet, Publish]
+    public Task<WeatherForecast[]> GetForecast(DateTime startDate,
+        CancellationToken cancellationToken = default)
+        => _forecast.GetForecast(startDate, cancellationToken);
 }

@@ -9,4 +9,9 @@
   <ItemGroup>
     <SupportedPlatform Include="browser" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Stl.Fusion" Version="2.3.23" />
+  </ItemGroup>
+  
 </Project>
