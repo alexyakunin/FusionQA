@@ -1,12 +1,12 @@
 ﻿@page "_Host"
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using FusionQA.Feb2020.Client
-@using FusionQA.Feb2020.Server.Options
+@using FusionQA.Feb2020.Server.Blazor
 @using Microsoft.Extensions.Options
+@inject IOptions<BlazorHybridOptions> _hybridOptions
 
-@inject IOptions<HybridOptions> HybridOptions
 @{
-    var hybridType = HybridOptions?.Value?.HybridType ?? EHybridType.HybridOnNavigation; 
+    var blazorHybridType = _hybridOptions?.Value?.HybridType ?? BlazorHybridType.HybridOnNavigation; 
 }
 <!DOCTYPE html>
 <html>
@@ -14,7 +14,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Fusion HybridBlazor: @hybridType</title>
+    <title>BlazorHybrid sample (@blazorHybridType)</title>
     <base href="/" />
     <link href="css/app.css" rel="stylesheet" />
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
@@ -23,39 +23,35 @@
 
 <body>
 
-@if (hybridType.ToString().StartsWith("Hybrid"))
-{
-    <srvr-app>
+@if (blazorHybridType.IsHybrid()) {
+    <server-app>
         <component type="typeof(App)" render-mode="ServerPrerendered" />
         <persist-component-state />
-    </srvr-app>
+    </server-app>
     <wasm-app style="display: none;">
         <component type="typeof(App)" render-mode="WebAssembly"/>
     </wasm-app>
 }
 
 <script>
-        window.hybridType = '@hybridType';
-        window.getHybridType = function () { return window.hybridType; }
-    </script>
+    window.blazorHybridType = '@blazorHybridType';
+    window.getBlazorHybridType = function () { return window.blazorHybridType; }
+</script>
 
-@if (hybridType == EHybridType.ServerSide)
-{
+@if (blazorHybridType == BlazorHybridType.ServerSide) {
     <app>
         <component type="typeof(App)" render-mode="ServerPrerendered" />
         <persist-component-state />
     </app>
     <script src="_framework/blazor.server.js"></script>
 }
-else if (hybridType == EHybridType.WebAssembly)
-{
+else if (blazorHybridType == BlazorHybridType.WebAssembly) {
     <app>
         <component type="typeof(App)" render-mode="WebAssemblyPrerendered"/>
     </app>
     <script src="_framework/blazor.webassembly.js"></script>
 }
-else
-{
+else {
     <script src="blazor.hybrid.js"></script>
 }
 
@@ -66,5 +62,4 @@ else
 </div>
 
 </body>
-
 </html>

@@ -1,5 +1,5 @@
 using FusionQA.Feb2020.Client;
-using FusionQA.Feb2020.Server.Options;
+using FusionQA.Feb2020.Server.Blazor;
 using FusionQA.Feb2020.Server.Services;
 using FusionQA.Feb2020.Shared;
 using Stl.Fusion;
@@ -8,20 +8,21 @@ using Stl.Fusion.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
+var cfg = builder.Configuration;
 
-// Configure
-builder.Services.Configure<HybridOptions>(builder.Configuration);
+// Options
+services.Configure<BlazorHybridOptions>(cfg.GetSection(nameof(BlazorHybridOptions)));
 
 // Fusion
 var fusion = services.AddFusion();
 var fusionServer = fusion.AddWebServer();
 
+SharedServices.Configure(services);
+
 // Fusion services
 fusion.AddFusionTime(); // IFusionTime is one of built-in compute services you can use
 fusion.AddComputeService<ICounterService, CounterService>();
 fusion.AddComputeService<IWeatherForecastService, WeatherForecastService>();
-
-SharedServices.ConfigureSharedServices(services);
 
 services.AddControllersWithViews();
 services.AddRazorPages();
@@ -57,14 +58,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-
-app.Use((context, next) =>
-{
-    var idCookieName = "hybrid-instance-id";
-    if (context.Request.Cookies.All(c => c.Key != idCookieName))
-    {
-        var idCookieOptions = new CookieOptions
-        {
+app.Use((context, next) => {
+    var hybridIdCookieName = "hybrid-instance-id";
+    if (context.Request.Cookies.All(c => c.Key != hybridIdCookieName)) {
+        var idCookieOptions = new CookieOptions {
             Path = "/",
             Secure = true,
             HttpOnly = true,
@@ -73,9 +70,10 @@ app.Use((context, next) =>
             Expires = DateTime.Now.AddYears(100),
         };
         context.Response.Cookies.Append(
-            key: idCookieName,
+            key: hybridIdCookieName,
             value: Guid.NewGuid().ToString(),
             options: idCookieOptions);
+        return next();
     }
     return next();
 });

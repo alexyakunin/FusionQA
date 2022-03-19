@@ -1,23 +1,27 @@
 ﻿(function () {
-    var getElementByTagName = function (name) {
+    const logInfo = function () {
+        console.info('[BlazorHybrid]:', ...arguments);
+    }
+
+    const getElementByTagName = function (name) {
         return document.getElementsByTagName(name)[0];
     }
 
-    var srvrApp = getElementByTagName("srvr-app");
-    var wasmApp = getElementByTagName("wasm-app");
+    const serverApp = getElementByTagName("server-app");
+    const wasmApp = getElementByTagName("wasm-app");
 
-    var windowAddEventActual = window.addEventListener;
-    var documentAddEventActual = document.addEventListener;
+    const windowAddEventActual = window.addEventListener;
+    const documentAddEventActual = document.addEventListener;
 
-    var wasmNavigateTo = null;
-    var captureListeners = false;
+    let wasmNavigateTo = null;
+    let captureListeners = false;
 
-    var addServerEvent = function (type, listener, options) {
-        srvrApp.addEventListener(type, listener, options);
+    const addServerEvent = function (type, listener, options) {
+        serverApp.addEventListener(type, listener, options);
     }
 
-    var wasmListeners = [];
-    var addWasmEvent = function (type, listener, options) {
+    const wasmListeners = [];
+    const addWasmEvent = function (type, listener, options) {
         if (type !== 'click' && type !== 'message' && type !== 'popstate') {
             addServerEvent(type, listener, options);
         }
@@ -27,8 +31,8 @@
         }
     }
 
-    var loadScript = function (name, callback) {
-        var script = document.createElement('script');
+    const loadScript = function (name, callback) {
+        const script = document.createElement('script');
         script.onload = callback;
         if (name === "webassembly") {
             script.setAttribute("autostart", "false");
@@ -37,13 +41,8 @@
         document.head.appendChild(script);
     }
 
-    var blazorInfo = function (message) {
-        console.info('[' + new Date().toISOString() + '] Information: ' + message);
-    }
-
-    var loadWasmFunction = function () {
-
-        if (getElementByTagName('srvr-app').innerHTML.indexOf('<!--Blazor:{') !== -1) {
+    const loadWasmFunction = function () {
+        if (getElementByTagName('server-app').innerHTML.indexOf('<!--Blazor:{') !== -1) {
             setTimeout(loadWasmFunction, 100);
             return;
         }
@@ -54,16 +53,14 @@
         captureListeners = true;
 
         loadScript('webassembly', function () {
-
             wasmNavigateTo = window.Blazor._internal.navigationManager.navigateTo;
             window.Blazor._internal.navigationManager.navigateTo = window.BlazorServer._internal.navigationManager.navigateTo;
-
             window.Blazor.start();
         });
     };
 
-    var init = function () {
-        var wasmReadyToSwitch = false;
+    const init = function () {
+        let wasmReadyToSwitch = false;
 
         window.addEventListener = addServerEvent;
         document.addEventListener = addServerEvent;
@@ -74,18 +71,17 @@
 
         setTimeout(loadWasmFunction, 100);
 
-        window.wasmReady = function () {
-            blazorInfo('Wasm ready');
-
+        window.blazorWasmReady = function () {
+            logInfo('WASM ready');
             wasmReadyToSwitch = true;
 
-            if (window.hybridType === 'HybridOnReady') {
-                window.switchToWasm(window.location.href);
+            if (window.blazorHybridType === 'HybridOnReady') {
+                window.blazorSwitchToWasm(window.location.href);
             }
         }
 
-        window.switchToWasm = function (location, manual) {
-            if (window.hybridType === 'HybridManual' && !manual) {
+        window.blazorSwitchToWasm = function (location, manual) {
+            if (window.blazorHybridType === 'HybridManual' && !manual) {
                 return true;
             }
 
@@ -96,14 +92,14 @@
             if (!wasmReadyToSwitch) return false;
             wasmReadyToSwitch = false;
 
-            blazorInfo('Switch to wasm');
+            logInfo('Switching to WASM');
 
             setTimeout(function () {
 
-                srvrApp.parentNode.removeChild(srvrApp);
+                serverApp.parentNode.removeChild(serverApp);
 
-                for (var l of wasmListeners) {
-                    wasmApp.addEventListener(l.type, l.listener, l.options);
+                for (const wasmListener of wasmListeners) {
+                    wasmApp.addEventListener(wasmListener.type, wasmListener.listener, wasmListener.options);
                 }
 
                 window.wasmListeners = wasmListeners
@@ -122,7 +118,7 @@
                 wasmNavigateTo(location, false, true);
 
                 wasmApp.style.display = "block";
-                srvrApp.style.display = "none";
+                serverApp.style.display = "none";
             }, 0);
 
             return true;

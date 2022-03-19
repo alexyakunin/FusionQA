@@ -32,6 +32,6 @@ var fusionClient = fusion.AddRestEaseClient(
 fusionClient.AddReplicaService<ICounterService, ICounterClientDef>();
 fusionClient.AddReplicaService<IWeatherForecastService, IWeatherForecastClientDef>();
 
-SharedServices.ConfigureSharedServices(builder.Services);
+SharedServices.Configure(builder.Services);
 
 await builder.Build().RunAsync();

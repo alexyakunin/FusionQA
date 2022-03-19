@@ -1,6 +1,6 @@
-﻿namespace FusionQA.Feb2020.Server.Options;
+﻿namespace FusionQA.Feb2020.Server.Blazor;
 
-public enum EHybridType
+public enum BlazorHybridType
 {
     ServerSide,
     WebAssembly,

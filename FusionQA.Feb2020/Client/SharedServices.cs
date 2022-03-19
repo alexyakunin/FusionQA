@@ -5,11 +5,12 @@ using Stl.Fusion.UI;
 
 namespace FusionQA.Feb2020.Client;
 
-public class SharedServices
+public static class SharedServices
 {
-    public static void ConfigureSharedServices(IServiceCollection services)
+    public static void Configure(IServiceCollection services)
     {
         var fusion = services.AddFusion();
+        
         fusion.AddBlazorUIServices();
         fusion.AddFusionTime();
         
