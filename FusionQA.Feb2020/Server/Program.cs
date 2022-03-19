@@ -1,3 +1,5 @@
+using FusionQA.Feb2020.Client;
+using FusionQA.Feb2020.Server.Options;
 using FusionQA.Feb2020.Server.Services;
 using FusionQA.Feb2020.Shared;
 using Stl.Fusion;
@@ -7,7 +9,8 @@ using Stl.Fusion.Server;
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
-// Add services to the container.
+// Configure
+builder.Services.Configure<HybridOptions>(builder.Configuration);
 
 // Fusion
 var fusion = services.AddFusion();
@@ -18,8 +21,11 @@ fusion.AddFusionTime(); // IFusionTime is one of built-in compute services you c
 fusion.AddComputeService<ICounterService, CounterService>();
 fusion.AddComputeService<IWeatherForecastService, WeatherForecastService>();
 
+SharedServices.ConfigureSharedServices(services);
+
 services.AddControllersWithViews();
 services.AddRazorPages();
+services.AddServerSideBlazor();
 
 services.AddEndpointsApiExplorer();
 services.AddSwaggerDocument();
@@ -38,10 +44,10 @@ else
 {
     app.UseExceptionHandler("/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    //app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseWebSockets(new WebSocketOptions() {
     KeepAliveInterval = TimeSpan.FromSeconds(30),
 });
@@ -51,9 +57,33 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+
+app.Use((context, next) =>
+{
+    var idCookieName = "hybrid-instance-id";
+    if (context.Request.Cookies.All(c => c.Key != idCookieName))
+    {
+        var idCookieOptions = new CookieOptions
+        {
+            Path = "/",
+            Secure = true,
+            HttpOnly = true,
+            IsEssential = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.Now.AddYears(100),
+        };
+        context.Response.Cookies.Append(
+            key: idCookieName,
+            value: Guid.NewGuid().ToString(),
+            options: idCookieOptions);
+    }
+    return next();
+});
+
 app.MapFusionWebSocketServer();
 app.MapRazorPages();
 app.MapControllers();
-app.MapFallbackToFile("index.html");
+app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
 
 app.Run();

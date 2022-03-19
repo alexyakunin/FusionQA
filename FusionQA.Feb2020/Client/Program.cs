@@ -28,19 +28,10 @@ var fusionClient = fusion.AddRestEaseClient(
         o.HttpClientActions.Add(client => client.BaseAddress = clientBaseUri);
     });
 
-// Fusion services
-fusion.AddFusionTime();
-
 // Fusion service clients
 fusionClient.AddReplicaService<ICounterService, ICounterClientDef>();
 fusionClient.AddReplicaService<IWeatherForecastService, IWeatherForecastClientDef>();
 
-// Fusion Blazor UI services
-fusion.AddBlazorUIServices();
-// Default update delayer w/ 0.5s update delay 
-services.AddTransient<IUpdateDelayer>(c => new UpdateDelayer(c.GetRequiredService<IUICommandTracker>(), 0.5)); 
-
-builder.RootComponents.Add<App>("#app");
-builder.RootComponents.Add<HeadOutlet>("head::after");
+SharedServices.ConfigureSharedServices(builder.Services);
 
 await builder.Build().RunAsync();
