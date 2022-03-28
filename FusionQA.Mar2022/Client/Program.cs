@@ -27,6 +27,7 @@ var fusionClient = fusion.AddRestEaseClient(
         var clientBaseUri = isFusionClient ? baseUri : apiBaseUri;
         o.HttpClientActions.Add(client => client.BaseAddress = clientBaseUri);
     });
+var fusionAuth = fusion.AddAuthentication().AddRestEaseClient();
 
 // Fusion service clients
 fusionClient.AddReplicaService<ICounterService, ICounterClientDef>();

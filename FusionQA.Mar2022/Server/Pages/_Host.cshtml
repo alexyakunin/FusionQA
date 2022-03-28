@@ -3,10 +3,21 @@
 @using FusionQA.Mar2022.Client
 @using FusionQA.Mar2022.Server.Blazor
 @using Microsoft.Extensions.Options
+@using Stl.Fusion.Blazor
+@using Stl.Fusion.Server.Authentication
+@using Stl.Fusion.Server.Controllers
 @inject IOptions<BlazorHybridOptions> _hybridOptions
+@inject ServerAuthHelper _serverAuthHelper
+@inject BlazorCircuitContext _blazorCircuitContext
 
 @{
     var blazorHybridType = _hybridOptions?.Value?.HybridType ?? BlazorHybridType.HybridOnNavigation; 
+    await _serverAuthHelper.UpdateAuthState(HttpContext);
+    var authSchemas = await _serverAuthHelper.GetSchemas(HttpContext);
+    var sessionId = _serverAuthHelper.Session.Id.Value;
+    var isServerSideBlazor = BlazorModeController.IsServerSideBlazor(HttpContext);
+    var isCloseWindowRequest = _serverAuthHelper.IsCloseWindowRequest(HttpContext, out var closeWindowFlowName);
+    Layout = null;
 }
 <!DOCTYPE html>
 <html>
@@ -19,13 +30,25 @@
     <link href="css/app.css" rel="stylesheet" />
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
     <link href="FusionQA.Mar2022.Client.styles.css" rel="stylesheet" />
+    <script src="_content/Stl.Fusion.Blazor/scripts/fusionAuth.js"></script>
+    <script>
+        window.FusionAuth.schemas = "@authSchemas";
+    </script>
 </head>
 
 <body>
 
+@if (isCloseWindowRequest) {
+    <script>
+        setTimeout(function () {
+            window.close();
+        }, 500)
+    </script>
+}
+
 @if (blazorHybridType.IsHybrid()) {
     <server-app>
-        <component type="typeof(App)" render-mode="ServerPrerendered" />
+        <component type="typeof(App)" render-mode="ServerPrerendered" param-SessionId="sessionId" />
         <persist-component-state />
     </server-app>
     <wasm-app style="display: none;">
@@ -40,7 +63,7 @@
 
 @if (blazorHybridType == BlazorHybridType.ServerSide) {
     <app>
-        <component type="typeof(App)" render-mode="ServerPrerendered" />
+        <component type="typeof(App)" render-mode="ServerPrerendered" param-SessionId="sessionId"/>
         <persist-component-state />
     </app>
     <script src="_framework/blazor.server.js"></script>

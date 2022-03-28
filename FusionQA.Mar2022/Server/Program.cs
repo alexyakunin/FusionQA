@@ -1,23 +1,62 @@
+using System.Text;
 using FusionQA.Mar2022.Client;
 using FusionQA.Mar2022.Server.Blazor;
 using FusionQA.Mar2022.Server.Services;
 using FusionQA.Mar2022.Shared;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Stl.Fusion;
+using Stl.Fusion.Blazor;
 using Stl.Fusion.Extensions;
 using Stl.Fusion.Server;
+using Stl.Fusion.Server.Authentication;
+using Stl.Fusion.Server.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var cfg = builder.Configuration;
+var env = builder.Environment;
 
 // Options
 services.Configure<BlazorHybridOptions>(cfg.GetSection(nameof(BlazorHybridOptions)));
+services.AddAuthentication(options => {
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+}).AddCookie(options => {
+    options.LoginPath = "/signIn";
+    options.LogoutPath = "/signOut";
+    if (env.IsDevelopment())
+        options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+    // This controls the expiration time stored in the cookie itself
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    options.SlidingExpiration = true;
+    // And this controls when the browser forgets the cookie
+    options.Events.OnSigningIn = ctx => {
+        ctx.CookieOptions.Expires = DateTimeOffset.UtcNow.AddDays(28);
+        return Task.CompletedTask;
+    };
+}).AddMicrosoftAccount(options => {
+    options.ClientId = "6839dbf7-d1d3-4eb2-a7e1-ce8d48f34d00";
+    options.ClientSecret = Encoding.UTF8.GetString(Convert.FromBase64String("REFYeH4yNTNfcVNWX2h0WkVoc1V6NHIueDN+LWRxUTA2Zw=="));
+    // That's for personal account authentication flow
+    options.AuthorizationEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
+    options.TokenEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
+    options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+});
 
 // Fusion
 var fusion = services.AddFusion();
 var fusionServer = fusion.AddWebServer();
-
-SharedServices.Configure(services);
+var fusionAuth = fusion.AddAuthentication();
+fusionAuth.AddAuthBackend().AddServer(
+    signInControllerSettingsFactory: _ => SignInController.DefaultSettings with {
+        DefaultScheme = MicrosoftAccountDefaults.AuthenticationScheme,
+        SignInPropertiesBuilder = (_, properties) => {
+            properties.IsPersistent = true;
+        }
+    },
+    serverAuthHelperSettingsFactory: _ => ServerAuthHelper.DefaultSettings with {
+        NameClaimKeys = Array.Empty<string>(),
+    });
 
 // Fusion services
 fusion.AddFusionTime(); // IFusionTime is one of built-in compute services you can use
@@ -26,7 +65,9 @@ fusion.AddComputeService<IWeatherForecastService, WeatherForecastService>();
 
 services.AddControllersWithViews();
 services.AddRazorPages();
-services.AddServerSideBlazor();
+services.AddServerSideBlazor(o => o.DetailedErrors = true);
+
+SharedServices.Configure(services); // Must follow services.AddServerSideBlazor()!
 
 services.AddEndpointsApiExplorer();
 services.AddSwaggerDocument();
@@ -52,11 +93,14 @@ else
 app.UseWebSockets(new WebSocketOptions() {
     KeepAliveInterval = TimeSpan.FromSeconds(30),
 });
+app.UseFusionSession();
 
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.Use((context, next) => {
     var hybridIdCookieName = "hybrid-instance-id";

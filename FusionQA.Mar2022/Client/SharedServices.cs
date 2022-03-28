@@ -10,7 +10,8 @@ public static class SharedServices
     public static void Configure(IServiceCollection services)
     {
         var fusion = services.AddFusion();
-        
+        var fusionAuth = fusion.AddAuthentication().AddBlazor();
+
         fusion.AddBlazorUIServices();
         fusion.AddFusionTime();
         
