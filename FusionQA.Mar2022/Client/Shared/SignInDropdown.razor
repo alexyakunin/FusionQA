@@ -21,7 +21,7 @@
     public string CssClass { get; set; } = "";
     [Parameter]
     public string Why { get; set; } = "";
-    [CascadingParameter]
+    [Inject]
     private Task<AuthState> AuthStateTask { get; set; } = null!;
     private AuthState AuthState { get; set; } = new(new User("")); // For SSB pre-render
     private User User => AuthState.User;
