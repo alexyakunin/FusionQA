@@ -16,9 +16,8 @@
     <ProjectReference Include="..\Shared\FusionQA.Mar2022.Shared.csproj" />
   </ItemGroup>
 
-
+  <!-- AOT & Trimming -->
   <PropertyGroup>
-    <!-- AOT & Trimming -->
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>copyused</TrimMode>
     <RunAOTCompilation>false</RunAOTCompilation>
