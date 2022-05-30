@@ -1,5 +1,4 @@
-﻿using System.Reactive;
-using FusionQA.Mar2022.Shared;
+﻿using FusionQA.Mar2022.Shared;
 using RestEase;
 
 namespace FusionQA.Mar2022.Client.Services;
