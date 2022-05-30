@@ -9,11 +9,24 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.5" PrivateAssets="all" />
-    <PackageReference Include="Stl.Fusion.Blazor" Version="2.4.52" />
+    <PackageReference Include="Stl.Fusion.Blazor" Version="2.4.59" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Shared\FusionQA.Mar2022.Shared.csproj" />
+  </ItemGroup>
+
+
+  <PropertyGroup>
+    <!-- AOT & Trimming -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>copyused</TrimMode>
+    <RunAOTCompilation>false</RunAOTCompilation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="System.Collections.Immutable" />
+    <TrimmerRootAssembly Include="System.Security.Cryptography.X509Certificates" />
   </ItemGroup>
 
 </Project>
